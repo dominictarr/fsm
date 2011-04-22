@@ -47,18 +47,30 @@ function FSM (schema){
   }
   var isArray = Array.isArray
 
+  function applyAll(list,self,args){
+    if('function' == typeof list)
+      return list.apply(self,args)
+    list.forEach(function (e){
+          e.apply(self,args)
+    })
+  }
+
   this.event = function (e,args){
+    var oldState = state
     args = args || []
     var trans = schema[state][e]
-      if(isState(trans)){
+      if('string' === typeof trans && isState(trans)){
         state = trans
       } else if (isArray(trans) && isState(trans[0])){
+        console.log('**********', trans)
         state = trans[0]
-        trans[1].apply(this,args)
+        applyAll(trans.splice(1),this,args)
       }
 
+    console.log( e,':',oldState,'->',state)
+
     if(schema[state]._in)
-      schema[state]._in()
+      applyAll(schema[state]._in,this,args)
     return this
   }
 }
