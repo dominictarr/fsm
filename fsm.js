@@ -26,7 +26,6 @@ function FSM (schema){
   if(!schema.fatal)
     schema.fatal = {
       _in: function (err){
-        console.log('FATAL ERROR')
         if('function' !== typeof callback)
           throw arguments
         callback.apply(null,[].slice.call(arguments))
@@ -80,10 +79,12 @@ function FSM (schema){
       list.forEach(function (e){
             e.apply(self,args)
       })
-    }catch (err){
-      if(state == 'fatal' || state == 'end')//once we're out of the FSM errors are not our business any more
+    } catch (err) {
+      //action thru an exception, generate throw event. (will transition to fatal by default)
+      //unless the FSM is complete, then throw it again and let someone else handle it.
+      if(state == 'fatal' || state == 'end')
         throw err
-      self.event('throw', [err].concat(args)) //follow error transition action throws
+      self.event('throw', [err].concat(args))
     }
   }
   this.callback = function (eventname){ //add options to apply timeout
@@ -99,11 +100,9 @@ function FSM (schema){
     args = args || []
 
     if('string' === typeof trans && isState(trans)){
-      console.log(state,'->', trans)
       state = trans
       this.transitions .push(e)
     } else if (isArray(trans) && isState(trans[0])){
-      console.log('**********', trans)
       state = trans[0]
       this.transitions .push(e)
       applyAll(trans.splice(1),this,args)
@@ -111,7 +110,7 @@ function FSM (schema){
 
     console.log( e,':',oldState,'->',state)
 
-    if(schema[state]._in)
+    if(schema[state]._in && oldState != state)
       applyAll(schema[state]._in,this,args)
 
     return this
@@ -121,10 +120,10 @@ function FSM (schema){
     self[e] = function (){self.event(e,[].slice.call(arguments))}
   })
   
-  this.call = function (){
+  this.call = function () {
     args = [].slice.call(arguments)
     if('function' === typeof args[args.length - 1])
       callback = args.pop()
-      applyAll(schema.start._in,self,args)
+    applyAll(schema.start._in,self,args)
   }
 }

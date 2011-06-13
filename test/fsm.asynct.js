@@ -86,3 +86,57 @@ exports ['callback function which auto handles errors'] = function (test){
     test.done()
   })
 }
+
+exports ['ignore events which no not have transitions'] = function (test){
+
+  var called = 0
+
+  new FSM({
+    start: {
+      _in: function (){
+        called ++
+        setTimeout(this.callback('ignore'),10)
+        setTimeout(this.callback('ignore'),20)
+        setTimeout(this.callback('ignore'),30)
+        setTimeout(this.callback('next'),50)
+      },
+      next: 'end'
+    },
+  }).call(1,2,3, function (err){
+    it(called).equal(1)
+    it(err).equal(null)
+    test.done()
+  })
+}
+
+exports ['fsm can give log of transitions'] = function (test){
+
+  var fsm = new FSM({
+    start: {
+      _in: function (){
+        setTimeout(this.callback('next'),10)
+        setTimeout(this.callback('toggle'),20)
+        setTimeout(this.callback('ignore'),25)
+        setTimeout(this.callback('toggle'),30)
+        setTimeout(this.callback('done'),50)
+      },
+      next: 'toggle1'
+    },
+    toggle1: {
+      toggle: 'toggle2',
+      done: 'end'
+    },
+    toggle2: {
+      toggle: 'toggle1',
+      done: 'end'
+    }
+  })
+
+  fsm.call(function (err){
+    it(fsm.getState()).equal('end')
+    it(fsm.transitions).deepEqual(['next','toggle','toggle','done'])
+    it(err).equal(null)
+    test.done()
+  })
+
+}

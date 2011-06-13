@@ -108,3 +108,43 @@ exports ['create functions for each event'] = function (){
   
   it([fsm.e1,fsm.e2]).every(it.function())
 }
+
+exports ['if all fsm is sync, callback is called sync'] = function (){
+
+  var called = false
+    , fsm = new FSM({
+    start: {
+      _in: function (){ this.callback('next')() }
+    , next: 'end'
+    }
+  }).call(function (){
+    called = true
+  })
+  
+  it(called).equal(true)
+
+}
+
+exports ['fsm should not catch errors thrown in final callback'] = function (){
+
+  var called = 0
+    , caught = false
+    , err = new Error('thrown in callback')
+    , fsm = new FSM({
+    start: {
+      _in: function (){ this.callback('next')() }
+    , next: 'end'
+    }
+  })
+  try {
+  fsm.call(function (){
+    called ++
+    throw err
+  })
+  } catch (_err){
+    caught = true
+    it(_err).equal(err)
+  }
+  it(caught).ok()
+  it(called).equal(1)
+}
