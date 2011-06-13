@@ -1,4 +1,6 @@
 
+var curry = require('curry')
+
 module.exports = FSM
 
 function first(obj){
@@ -10,8 +12,30 @@ function first(obj){
 function FSM (schema){
   if(!(this instanceof FSM)) return new FSM (schema)
 
-  var state = first(schema)
+  var state = first(schema) //name it start, OR ELSE
+    , self = this
+    , callback
+  
+  this.transitions = []
+  
+  if(!schema.end)
+    schema.end = {
+      _in: function (){callback.apply(null,[null].concat([].slice.call(arguments)))}
+    }
 
+  if(!schema.fatal)
+    schema.fatal = {
+      _in: function (err){
+        console.log('FATAL ERROR')
+        if('function' !== typeof callback)
+          throw arguments
+        callback.apply(null,[].slice.call(arguments))
+        }
+    }
+
+  this.local = {}
+  this.save = {}
+  
   this.getState = function (){
     return state
   }
@@ -48,29 +72,57 @@ function FSM (schema){
   var isArray = Array.isArray
 
   function applyAll(list,self,args){
-    if('function' == typeof list)
-      return list.apply(self,args)
-    list.forEach(function (e){
-          e.apply(self,args)
-    })
+    try {
+      if('function' == typeof list)
+        return list.apply(self,args)
+      list.forEach(function (e){
+            e.apply(self,args)
+      })
+    }catch (err){
+      if(state == 'fatal' || state == 'end')//once we're out of the FSM errors are not our business any more
+        throw err
+      self.event('error', [err].concat(args)) //follow error transition action throws
+    }
   }
-
+  this.callback = function (eventname){ //add options to apply timeout
+    return function () {
+      var args = [].slice.call(arguments)
+      self.event(args[0] ? 'error' : eventname, args)
+    }
+  }
   this.event = function (e,args){
     var oldState = state
+      , trans = schema[state][e] || (e === 'error' ? 'fatal' : null)
+
     args = args || []
-    var trans = schema[state][e]
-      if('string' === typeof trans && isState(trans)){
-        state = trans
-      } else if (isArray(trans) && isState(trans[0])){
-        console.log('**********', trans)
-        state = trans[0]
-        applyAll(trans.splice(1),this,args)
-      }
+
+    if('string' === typeof trans && isState(trans)){
+      console.log(state,'->', trans)
+      state = trans
+      this.transitions .push(e)
+    } else if (isArray(trans) && isState(trans[0])){
+      console.log('**********', trans)
+      state = trans[0]
+      this.transitions .push(e)
+      applyAll(trans.splice(1),this,args)
+    }
 
     console.log( e,':',oldState,'->',state)
 
     if(schema[state]._in)
       applyAll(schema[state]._in,this,args)
+
     return this
+  }
+  
+  this.getEvents().forEach(function (e){
+    self[e] = function (){self.event(e,[].slice.call(arguments))}
+  })
+  
+  this.call = function (){
+    args = [].slice.call(arguments)
+    if('function' === typeof args[args.length - 1])
+      callback = args.pop()
+      applyAll(schema.start._in,this,args)
   }
 }

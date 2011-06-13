@@ -21,7 +21,7 @@ exports ['basic'] = function (){
     }
   })
 
-  it(fsm.getStates()).deepEqual(['s1','s2'])
+  it(fsm.getStates()).has(['s1','s2'])//end and fatal states will be created automaticially
   it(fsm.getEvents()).deepEqual(['e1','e2'])
 
   it(s2).equal(false)
@@ -91,6 +91,20 @@ exports ['sequence'] = function (){
       }]
     }
   })
-
   it(fsm.sequence('e1 e2 e1 e2'.split(' ')).getState()).equal('s1')
+}
+
+exports ['create functions for each event'] = function (){
+
+  var fsm = new FSM({
+    s1: {
+      e1: 's2', //transition to state 2
+      e2: 's1' //stay in this state
+    }
+  , s2: {
+      e1: ['s1', function (){}]
+    }
+  })
+  
+  it([fsm.e1,fsm.e2]).every(it.function())
 }

@@ -15,7 +15,9 @@
   "engines": {
     "node": ">= 0.2.0"
   },
-  "dependencies": {},
+  "dependencies": {
+    "curry" : "0.0"
+  },
   "devDependencies": {
     "it-is" : "0.0"
   }
