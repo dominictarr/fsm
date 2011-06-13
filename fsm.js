@@ -49,7 +49,6 @@ function FSM (schema){
   }
 
   this.sequence = function (seq){
-    var self = this
     seq.forEach(function (e){
       self.event(e,[])
     })
@@ -71,17 +70,20 @@ function FSM (schema){
   }
   var isArray = Array.isArray
 
-  function applyAll(list,self,args){
+  function applyAll(list,ignore,args){
+    args = args || []
     try {
-      if('function' == typeof list)
+      if('function' == typeof list) {
+        console.log("ARGS",args)     
         return list.apply(self,args)
+      }
       list.forEach(function (e){
             e.apply(self,args)
       })
     }catch (err){
       if(state == 'fatal' || state == 'end')//once we're out of the FSM errors are not our business any more
         throw err
-      self.event('error', [err].concat(args)) //follow error transition action throws
+      self.event('throw', [err].concat(args)) //follow error transition action throws
     }
   }
   this.callback = function (eventname){ //add options to apply timeout
@@ -92,7 +94,7 @@ function FSM (schema){
   }
   this.event = function (e,args){
     var oldState = state
-      , trans = schema[state][e] || (e === 'error' ? 'fatal' : null)
+      , trans = schema[state][e] || (e === 'error' || e === 'throw' ? 'fatal' : null)
 
     args = args || []
 
@@ -123,6 +125,6 @@ function FSM (schema){
     args = [].slice.call(arguments)
     if('function' === typeof args[args.length - 1])
       callback = args.pop()
-      applyAll(schema.start._in,this,args)
+      applyAll(schema.start._in,self,args)
   }
 }
