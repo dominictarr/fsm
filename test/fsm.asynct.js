@@ -140,3 +140,92 @@ exports ['fsm can give log of transitions'] = function (test){
   })
 
 }
+
+exports ['set up next tick while transferring to next state'] = function (test){
+
+ var fsm = new FSM({
+    start: {
+      _in: function (){
+        setTimeout(this.callback('next'),10)
+      },
+      next: ['middle', function (){
+        setTimeout(this.callback('done'),10)
+      }]
+    },
+    middle: {
+      done: 'end'
+    }
+  })
+
+  fsm.call(function (err){
+    it(fsm.getState()).equal('end')
+    it(fsm.transitions).deepEqual(['next','done'])
+    it(err).equal(null)
+    test.done()
+  })
+
+}
+
+exports ['set up next tick while transferring to next state 2'] = function (test){
+
+ var fsm = new FSM({
+    start: {
+      _in: function (){
+        setTimeout(this.callback('next'),10)
+      },
+      next: ['middle', function (){
+        setTimeout(this.callback('next'),10)
+      }]
+    },
+    middle: {
+      done: 'end', //accidentially had this outside the middle state.
+      /*
+      1. checking for non blocking would have detected this problem, 
+      
+      */
+      next: ['middle',function (){
+        setTimeout(this.callback('done'),10)
+      }]
+    }
+  })
+
+  fsm.call(function (err){
+    it(fsm.getState()).equal('end')
+    it(fsm.transitions).deepEqual(['next','next','done'])
+    it(err).equal(null)
+    test.done()
+  })
+
+}
+
+exports ['if an action generates a event syncly, it should be defured untill the transition is complete'] = function (test){
+
+ var fsm = new FSM({
+    start: {
+      _in: function (){
+        setTimeout(this.callback('next'),10)
+      },
+      next: ['middle', function (){
+        setTimeout(this.callback('next'),10)
+      }]
+    },
+    middle: {
+      done: 'end', //accidentially had this outside the middle state.
+      /*
+      1. checking for non blocking would have detected this problem, 
+      
+      */
+      next: ['middle',function (){
+        this.callback('done')()
+      }]
+    }
+  })
+
+  fsm.call(function (err){
+    it(fsm.getState()).equal('end')
+    it(fsm.transitions).deepEqual(['next','next','done'])
+    it(err).equal(null)
+    test.done()
+  })
+
+}

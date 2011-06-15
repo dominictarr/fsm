@@ -148,3 +148,18 @@ exports ['fsm should not catch errors thrown in final callback'] = function (){
   it(caught).ok()
   it(called).equal(1)
 }
+
+exports ['throw if an invalid transition is defined'] = function (){
+
+  it(function (){
+    new FSM({
+      start:{
+      next: 'middle'
+      },
+      middle: {
+        next: 'nowhere'
+      }
+    })
+  }).throws()
+
+}

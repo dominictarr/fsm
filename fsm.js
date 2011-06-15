@@ -8,26 +8,43 @@ function first(obj){
     return i
   }
 }
+/*
+TODO:
+
+  namespaced events
+  (specificially, name spaced errors)
+
+  process sync events FIFO no LIFO.
+  
+  check graph is fully connected and no dead ends.
+
+*/
+
 
 function FSM (schema){
   if(!(this instanceof FSM)) return new FSM (schema)
 
   var state = first(schema) //name it start, OR ELSE
     , self = this
+    , events = []
+    , changing = false
     , callback
   
   this.transitions = []
   
+  //create default states.
   if(!schema.end)
     schema.end = {
-      _in: function (){callback.apply(null,[null].concat([].slice.call(arguments)))}
+      _in: function (){
+      callback.apply(null,[].slice.call(arguments))}
     }
 
+  //create default states.
   if(!schema.fatal)
     schema.fatal = {
       _in: function (err){
         if('function' !== typeof callback)
-          throw arguments
+          throw err || new Error ('FSM in fatal state')
         callback.apply(null,[].slice.call(arguments))
         }
     }
@@ -54,46 +71,72 @@ function FSM (schema){
     return this
   }
 
-  this.getEvents = function (){
-    var s = []
-    for(var i in schema){
-      for(var j in schema[i])
-        if(!~s.indexOf(j) && j[0] != '_')
-          s.push(j)
-    }
-    return s
-  }
-
+  //get events, and check that the transtions are valid
   function isState(e){
     return schema[e] ? e : false
   }
   var isArray = Array.isArray
 
-  function applyAll(list,ignore,args){
+  this.getEvents = function (){
+    var s = []
+    for(var i in schema){
+      for(var j in schema[i])//events
+        if(!~s.indexOf(j) && j[0] != '_')
+          s.push(j)
+        if(j !== '_in' && 'function' !== typeof schema[i][j]){ //repeating
+          var trans = schema[i][j]
+          trans = isArray(trans) ? trans[0] : trans
+          if(!isState(trans))
+            throw new Error(['transition:', j, ':', i, '->', trans, 'is not to a valid state'].join(' ') )
+        }
+    }
+    return s
+  }
+
+  function applyTo(args,funx){
     args = args || []
     try {
-      if('function' == typeof list) {
-        console.log("ARGS",args)     
-        return list.apply(self,args)
+      if('function' == typeof funx) {
+        return funx.apply(self,args)
       }
-      list.forEach(function (e){
-            e.apply(self,args)
+      funx.forEach(function (e){
+        e.apply(self,args)
       })
     } catch (err) {
-      //action thru an exception, generate throw event. (will transition to fatal by default)
+      //action threw an exception, generate throw event. (will transition to fatal by default)
       //unless the FSM is complete, then throw it again and let someone else handle it.
       if(state == 'fatal' || state == 'end')
         throw err
       self.event('throw', [err].concat(args))
     }
   }
+
   this.callback = function (eventname){ //add options to apply timeout
     return function () {
       var args = [].slice.call(arguments)
       self.event(args[0] ? 'error' : eventname, args)
     }
   }
+  /*
+    rewrite this function:
+    
+    push event onto a list
+    
+    then if FSM isn't already between states 
+    (because many events could be generated syncronously)
+  
+    start processing events, on a first come first served basis.
+  */
   this.event = function (e,args){
+    events.push([e,args])
+
+    while(!changing && events.length){
+      changing = true
+      changeState.apply(this,events.shift())
+      changing = false
+    }
+  }
+  function changeState (e,args) {
     var oldState = state
       , trans = schema[state][e] || (e === 'error' || e === 'throw' ? 'fatal' : null)
 
@@ -101,19 +144,21 @@ function FSM (schema){
 
     if('string' === typeof trans && isState(trans)){
       state = trans
-      this.transitions .push(e)
+      self.transitions.push(e)
     } else if (isArray(trans) && isState(trans[0])){
       state = trans[0]
-      this.transitions .push(e)
-      applyAll(trans.splice(1),this,args)
+      self.transitions .push(e)
+      applyTo(args,trans.splice(1))
+    } else if('function' == typeof trans)
+      throw new Error('transition cannot be function:' + trans)
+
+    console.log(e, ':', oldState, '->', state)
+
+    if(schema[state]._in && oldState != state){
+      console.log(schema[state]._in.toString())
+      applyTo(args,schema[state]._in)
     }
-
-    console.log( e,':',oldState,'->',state)
-
-    if(schema[state]._in && oldState != state)
-      applyAll(schema[state]._in,this,args)
-
-    return this
+    return self
   }
   
   this.getEvents().forEach(function (e){
@@ -124,6 +169,6 @@ function FSM (schema){
     args = [].slice.call(arguments)
     if('function' === typeof args[args.length - 1])
       callback = args.pop()
-    applyAll(schema.start._in,self,args)
+    applyTo(args,schema.start._in)
   }
 }

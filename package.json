@@ -2,7 +2,7 @@
   "author": "Dominic Tarr <dominic.tarr@gmail.com> (http://bit.ly/dominictarr)",
   "name": "fsm",
   "description": "Finite State Machine - Separate Control Flow from IO",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "homepage": "https://github.com/dominictarr/fsm",
   "repository": {
     "type": "git",
