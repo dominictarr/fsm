@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/dominictarr/fsm.png)](http://travis-ci.org/dominictarr/fsm)
 # Finite State Machine for nodejs #
 
 the idea here is to define control flow seperately from IO.
