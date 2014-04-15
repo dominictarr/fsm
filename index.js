@@ -88,14 +88,13 @@ var reachable = exports.reachable = function (fsm) {
   return reachable
 }
 
-// deadlock: are there any dead ends that cannot reach a terminal state?
-// get the states that are not terminal states that cannot reach any states.
+// deadlock: are there any dead ends that cannot reach another state?
 
-exports.deadlock = function (fsm, terminals) {
-  terminals = terminals || []
+export.terminal =
+exports.deadlock = function (fsm) {
   var dead = []
   each(fsm, function (state, name) {
-    if(empty(state) && !contains(terminals, name)) dead.push(name)
+    if(empty(state)) dead.push(name)
   })
   return dead
 }
