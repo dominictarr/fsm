@@ -1,24 +1,17 @@
 {
   "author": "Dominic Tarr <dominic.tarr@gmail.com> (http://bit.ly/dominictarr)",
   "name": "fsm",
-  "description": "Finite State Machine - Separate Control Flow from IO",
+  "description": "finite state machines",
   "version": "0.0.1",
   "homepage": "https://github.com/dominictarr/fsm",
   "repository": {
     "type": "git",
     "url": "git://github.com/dominictarr/fsm.git"
   },
-  "main": "fsm.js",
   "scripts": {
-    "test": "meta-test test/*.js"
-  },
-  "engines": {
-    "node": ">= 0.2.0"
-  },
-  "dependencies": {
-    "curry" : "0.0"
+    "test": "node test/index.jss"
   },
   "devDependencies": {
-    "it-is" : "0.0"
+    "tape": "~2.12.3"
   }
 }
