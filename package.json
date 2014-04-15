@@ -1,8 +1,8 @@
 {
   "author": "Dominic Tarr <dominic.tarr@gmail.com> (http://bit.ly/dominictarr)",
   "name": "fsm",
-  "description": "finite state machines",
-  "version": "0.0.1",
+  "description": "check finite state machine properties",
+  "version": "1.0.0",
   "homepage": "https://github.com/dominictarr/fsm",
   "repository": {
     "type": "git",
