@@ -90,7 +90,7 @@ var reachable = exports.reachable = function (fsm) {
 
 // deadlock: are there any dead ends that cannot reach another state?
 
-export.terminal =
+exports.terminal =
 exports.deadlock = function (fsm) {
   var dead = []
   each(fsm, function (state, name) {
