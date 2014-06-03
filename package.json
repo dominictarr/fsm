@@ -12,6 +12,10 @@
     "test": "node test/index.jss"
   },
   "devDependencies": {
-    "tape": "~2.12.3"
+    "tape": "~2.12.3",
+    "pull-stream": "~2.23.0"
+  },
+  "dependencies": {
+    "split": "~0.3.0"
   }
 }
