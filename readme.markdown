@@ -6,6 +6,10 @@ There is a lot of academic research in this area, yet this module is very simple
 There are a lot of fancy tools available, but they are not easy to use.
 If idea is really useful, then I think a very simple tool should be viable.
 
+## License
+
+MIT
+
 # Example
 
 Define FSM as json, here is a stream with 4 states.
