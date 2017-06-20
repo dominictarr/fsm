@@ -58,7 +58,7 @@ the result is in the form of
 
 return the list of states that cannot reach another state.
 
-alias: `deadlock'
+alias: `deadlock`
 
 ### livelock (fsm, [terminal])
 
